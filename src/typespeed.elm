@@ -5,6 +5,8 @@ import Json.Decode as Json
 import Time exposing (Time, second)
 
 
+nbStepsBeforeGameOver = 12
+
 main =
   Html.program
     { init = init
@@ -72,6 +74,9 @@ checkWord lpw w =
   in
     (newLpw, hasChanged)
 
+isGameOver : List PositionedWord -> Bool
+isGameOver = List.any (\{word, pos} -> pos >= nbStepsBeforeGameOver)
+
 -- UPDATE
 
 
@@ -118,11 +123,14 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-  let
-    wordDisplayList = List.map displayWordPos model.wordPosList
-  in 
-    div []
-      ((List.intersperse (br [] []) wordDisplayList) ++
-      [ br [] []
-      , input [ type_ "text", onInput ChangeEntry, onKeyDown KeyDown ] []
-      ])
+  if isGameOver model.wordPosList then
+    span [] [ text "You are too slow!" ]
+  else
+    let
+      wordDisplayList = List.map displayWordPos model.wordPosList
+    in
+      div []
+        ((List.intersperse (br [] []) wordDisplayList) ++
+        [ br [] []
+        , input [ type_ "text", onInput ChangeEntry, onKeyDown KeyDown ] []
+        ])
