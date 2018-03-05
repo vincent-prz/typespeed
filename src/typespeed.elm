@@ -1,6 +1,7 @@
 import Html exposing (Html, br, button, div, input, span, text)
 import Html.Attributes exposing (style, type_)
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (keyCode, on, onClick, onInput)
+import Json.Decode as Json
 import Time exposing (Time, second)
 
 
@@ -12,7 +13,9 @@ main =
     , subscriptions = subscriptions
     }
 
+
 -- TYPES
+
 type alias Word = String
 type alias Position = Int
 type alias Duration = Int
@@ -22,6 +25,10 @@ type alias PositionedWord = {
 }
 
 -- UTILS
+
+onKeyDown : (Int -> msg) -> Html.Attribute msg
+onKeyDown tagger =
+  on "keydown" (Json.map tagger keyCode)
 
 -- MODEL
 
@@ -71,7 +78,7 @@ checkWord lpw w =
 type Msg
   = Tick
   | ChangeEntry String
-  | Submit String
+  | KeyDown Int
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -89,11 +96,14 @@ update msg model =
         (newModel, Cmd.none)
     ChangeEntry word ->
       ({ model | currentEntry = word }, Cmd.none)
-    Submit word ->
-      let
-        (newWordPosList, _) = checkWord model.wordPosList word
-      in
-        ({ model | wordPosList = newWordPosList }, Cmd.none)
+    KeyDown key ->
+      if key == 13 then
+        let
+          (newWordPosList, _) = checkWord model.wordPosList model.currentEntry
+        in
+          ({ model | wordPosList = newWordPosList }, Cmd.none)
+      else
+        (model, Cmd.none)
 
 -- SUBSCRIPTIONS
 
@@ -114,6 +124,5 @@ view model =
     div []
       ((List.intersperse (br [] []) wordDisplayList) ++
       [ br [] []
-      , input [type_ "text", onInput ChangeEntry ] []
-      , button [ onClick (Submit model.currentEntry) ] [ text "Submit" ]
+      , input [ type_ "text", onInput ChangeEntry, onKeyDown KeyDown ] []
       ])
