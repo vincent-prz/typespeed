@@ -3,11 +3,35 @@ import Html exposing (Html, br, button, div, input, span, text)
 import Html.Attributes exposing (autofocus, id, style, type_)
 import Html.Events exposing (keyCode, on, onBlur, onClick, onInput)
 import Json.Decode as Json
+import Random
 import Task
 import Time exposing (Time, second)
 
+nbStepsBeforeGameOver = 12
 
-nbStepsBeforeGameOver = 9
+allWords = [
+  "Apple",
+  "Animal",
+  "Banana",
+  "Bear",
+  "Beard",
+  "Cake",
+  "Clone",
+  "Direction",
+  "Enable",
+  "Fuck",
+  "Go",
+  "Hello",
+  "Hell",
+  "King",
+  "Language",
+  "Maybe",
+  "Nothing",
+  "Queen",
+  "Silence",
+  "Understand",
+  "Zigzag"
+  ]
 
 main =
   Html.program
@@ -47,10 +71,7 @@ init =
   let
     initModel = 
       { nbTicks = 0,
-        wordPosList = [
-          { word = "Hello", pos = 0 },
-          { word = "Bye", pos = 1}
-        ],
+        wordPosList = [ { word = "Go", pos = 0 } ],
         currentEntry = ""
       }
   in
@@ -77,6 +98,15 @@ checkWord lpw w =
   in
     (newLpw, hasChanged)
 
+getRandomValueFromList : List a -> Random.Generator (Maybe a)
+getRandomValueFromList l =
+  let
+    index = Random.int 0 (List.length l - 1)
+    maybeVal = Random.map (\ind -> List.head (List.drop ind l)) index
+  in
+    maybeVal
+
+
 isGameOver : List PositionedWord -> Bool
 isGameOver = List.any (\{word, pos} -> pos >= nbStepsBeforeGameOver)
 
@@ -87,6 +117,7 @@ type Msg
   = Tick
   | ChangeEntry String
   | KeyDown Int
+  | AddWord (Maybe Word)
   -- those two actions are for keeping the focus on the input
   -- see https://stackoverflow.com/questions/31901397/how-to-set-focus-on-an-element-in-elm
   | FocusOnInput
@@ -98,16 +129,22 @@ update msg model =
   case msg of
     Tick ->
       let
-        tempList = List.map shiftWordPos model.wordPosList
-        newWordPosList = if (model.nbTicks % 3) == 0 then addWord tempList "fuck" else tempList
+        newWordPosList = List.map shiftWordPos model.wordPosList
         newModel =
           {
             model |
             nbTicks = model.nbTicks + 1,
             wordPosList = newWordPosList
           }
+        cmd = if (model.nbTicks % 3) == 0 then Random.generate AddWord (getRandomValueFromList allWords) else Cmd.none
       in
-        (newModel, Cmd.none)
+        (newModel, cmd)
+    AddWord maybeWord ->
+      case maybeWord of
+        Just w ->
+          ({ model | wordPosList = addWord model.wordPosList w }, Cmd.none)
+        Nothing ->
+          ({ model | wordPosList = addWord model.wordPosList "Nothing" }, Cmd.none)
     ChangeEntry word ->
       ({ model | currentEntry = word }, Cmd.none)
     KeyDown key ->
