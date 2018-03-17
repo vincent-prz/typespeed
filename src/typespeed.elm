@@ -8,6 +8,7 @@ import Task
 import Time exposing (Time, second)
 
 nbStepsBeforeGameOver = 12
+nbPixelsPerStep = 40
 
 allWords = [
   "Apple",
@@ -62,7 +63,9 @@ onKeyDown tagger =
 type alias Model =
   { nbTicks : Int,
     wordPosList : List PositionedWord,
-    currentEntry : String
+    currentEntry : String,
+    score: Int,
+    nbMisses: Int
   }
 
 
@@ -72,7 +75,9 @@ init =
     initModel = 
       { nbTicks = 0,
         wordPosList = [ { word = "Go", pos = 0 } ],
-        currentEntry = ""
+        currentEntry = "",
+        score = 0,
+        nbMisses = 0
       }
   in
     (initModel, Cmd.none)
@@ -84,7 +89,7 @@ shiftWordPos : PositionedWord -> PositionedWord
 shiftWordPos { word, pos } = { word = word, pos = pos + 1 }
 
 displayWordPos : PositionedWord -> Html msg
-displayWordPos {word, pos} = span [ style [("padding", toString(pos * 10) ++ "px") ] ] [ text word ]
+displayWordPos {word, pos} = span [ style [ ("padding", toString(pos * nbPixelsPerStep) ++ "px"), ("color", "white") ] ] [ text word ]
 
 addWord : List PositionedWord -> Word -> List PositionedWord
 addWord list w = list ++ [{ word = w, pos = 0 }]
@@ -150,9 +155,11 @@ update msg model =
     KeyDown key ->
       if key == 13 then
         let
-          (newWordPosList, _) = checkWord model.wordPosList model.currentEntry
+          (newWordPosList, found) = checkWord model.wordPosList model.currentEntry
+          newScore = if found then model.score + (String.length model.currentEntry) else model.score
+          newNbMisses = if found then model.nbMisses else model.nbMisses + 1
         in
-          ({ model | wordPosList = newWordPosList, currentEntry = "" }, Cmd.none)
+          ({ model | wordPosList = newWordPosList, currentEntry = "", score = newScore, nbMisses = newNbMisses }, Cmd.none)
       else
         (model, Cmd.none)
     FocusOnInput ->
@@ -182,13 +189,32 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
   if isGameOver model.wordPosList then
-    span [] [ text "You are too slow!" ]
+    div [] [
+      span [] [ text "You lose!" ]
+      , br [] []
+      , span [] [ text (" Score = " ++ toString model.score) ]
+      , br [] []
+      , span [] [ text (" Misses = " ++ toString model.nbMisses) ]
+    ]
   else
     let
       wordDisplayList = List.map displayWordPos model.wordPosList
+      areaWidth = toString (nbStepsBeforeGameOver * nbPixelsPerStep) ++ "px"
     in
-      div []
-        ((List.intersperse (br [] []) wordDisplayList) ++
-        [ br [] []
-        , input [ id "input", type_ "text", value model.currentEntry, onInput ChangeEntry, onKeyDown KeyDown, autofocus True, onBlur FocusOnInput ] []
-        ])
+      div [] [
+        div [ style [ ("height" , "400px"), ("width" , areaWidth), ("background-color", "black") ]]
+          ((List.intersperse (br [] []) wordDisplayList) ++
+          [ br [] []
+          ])
+        , input [
+            id "input",
+            type_ "text",
+            value model.currentEntry,
+            onInput ChangeEntry,
+            onKeyDown KeyDown,
+            autofocus True,
+            onBlur FocusOnInput
+          ] []
+        , span [] [ text (" Score = " ++ toString model.score) ]
+        , span [] [ text (" Misses = " ++ toString model.nbMisses) ]
+      ]
