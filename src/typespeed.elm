@@ -11,27 +11,27 @@ nbStepsBeforeGameOver = 12
 nbPixelsPerStep = 40
 
 allWords = [
-  "Apple",
-  "Animal",
-  "Banana",
-  "Bear",
-  "Beard",
-  "Cake",
-  "Clone",
-  "Direction",
-  "Enable",
-  "Fuck",
-  "Go",
-  "Hello",
-  "Hell",
-  "King",
-  "Language",
-  "Maybe",
-  "Nothing",
-  "Queen",
-  "Silence",
-  "Understand",
-  "Zigzag"
+  "apple",
+  "animal",
+  "banana",
+  "bear",
+  "beard",
+  "cake",
+  "clone",
+  "direction",
+  "enable",
+  "fuck",
+  "go",
+  "hello",
+  "hell",
+  "king",
+  "language",
+  "maybe",
+  "nothing",
+  "queen",
+  "silence",
+  "understand",
+  "zigzag"
   ]
 
 main =
@@ -74,7 +74,7 @@ init =
   let
     initModel = 
       { nbTicks = 0,
-        wordPosList = [ { word = "Go", pos = 0 } ],
+        wordPosList = [ { word = "go", pos = 0 } ],
         currentEntry = "",
         score = 0,
         nbMisses = 0
@@ -89,7 +89,19 @@ shiftWordPos : PositionedWord -> PositionedWord
 shiftWordPos { word, pos } = { word = word, pos = pos + 1 }
 
 displayWordPos : PositionedWord -> Html msg
-displayWordPos {word, pos} = span [ style [ ("padding", toString(pos * nbPixelsPerStep) ++ "px"), ("color", "white") ] ] [ text word ]
+displayWordPos {word, pos} =
+  let
+    pixelPadding = toString(pos * nbPixelsPerStep) ++ "px"
+    color =
+      if pos < nbStepsBeforeGameOver // 2
+        then "green"
+      else
+        if pos < 3 * nbStepsBeforeGameOver // 4
+          then "yellow"
+        else
+          "red"
+  in
+    span [ style [ ("padding", pixelPadding), ("color", color) ] ] [ text word ]
 
 addWord : List PositionedWord -> Word -> List PositionedWord
 addWord list w = list ++ [{ word = w, pos = 0 }]
@@ -141,7 +153,15 @@ update msg model =
             nbTicks = model.nbTicks + 1,
             wordPosList = newWordPosList
           }
-        cmd = if (model.nbTicks % 3) == 0 then Random.generate AddWord (getRandomValueFromList allWords) else Cmd.none
+        rythm =
+          if model.score < 25
+            then 3
+          else
+            if model.score < 50
+              then 2
+            else
+              1
+        cmd = if (model.nbTicks % rythm) == 0 then Random.generate AddWord (getRandomValueFromList allWords) else Cmd.none
       in
         (newModel, cmd)
     AddWord maybeWord ->
