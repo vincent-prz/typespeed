@@ -1,6 +1,6 @@
 import Dom
 import Html exposing (Html, br, button, div, input, span, text)
-import Html.Attributes exposing (autofocus, id, style, type_)
+import Html.Attributes exposing (autofocus, id, style, type_, value)
 import Html.Events exposing (keyCode, on, onBlur, onClick, onInput)
 import Json.Decode as Json
 import Random
@@ -92,7 +92,7 @@ addWord list w = list ++ [{ word = w, pos = 0 }]
 checkWord : List PositionedWord -> Word -> (List PositionedWord, Bool)
 checkWord lpw w =
   let
-    f = \{word, pos} -> if word /= w then Just {word=word, pos=pos} else Nothing
+    f = \{word, pos} -> if String.toUpper word /= String.toUpper w then Just {word=word, pos=pos} else Nothing
     newLpw = List.filterMap f lpw
     hasChanged = (List.length lpw) /= List.length newLpw
   in
@@ -152,7 +152,7 @@ update msg model =
         let
           (newWordPosList, _) = checkWord model.wordPosList model.currentEntry
         in
-          ({ model | wordPosList = newWordPosList }, Cmd.none)
+          ({ model | wordPosList = newWordPosList, currentEntry = "" }, Cmd.none)
       else
         (model, Cmd.none)
     FocusOnInput ->
@@ -190,5 +190,5 @@ view model =
       div []
         ((List.intersperse (br [] []) wordDisplayList) ++
         [ br [] []
-        , input [ id "input", type_ "text", onInput ChangeEntry, onKeyDown KeyDown, autofocus True, onBlur FocusOnInput ] []
+        , input [ id "input", type_ "text", value model.currentEntry, onInput ChangeEntry, onKeyDown KeyDown, autofocus True, onBlur FocusOnInput ] []
         ])
