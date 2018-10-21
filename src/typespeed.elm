@@ -1,11 +1,12 @@
-import Dom
+import Browser
 import Html exposing (Html, br, button, div, input, span, text)
 import Html.Attributes exposing (autofocus, id, style, type_, value)
 import Html.Events exposing (keyCode, on, onBlur, onClick, onInput)
 import Json.Decode as Json
 import Random
+import String
 import Task
-import Time exposing (Time, second)
+import Time exposing (every)
 
 nbStepsBeforeGameOver = 12
 nbPixelsPerStep = 40
@@ -35,7 +36,7 @@ allWords = [
   ]
 
 main =
-  Html.program
+  Browser.element
     { init = init
     , view = view
     , update = update
@@ -48,9 +49,9 @@ main =
 type alias Word = String
 type alias Position = Int
 type alias PositionedWord = {
-  word: Word,
-  pos: Position
-}
+    word: Word,
+    pos: Position
+  }
 
 -- UTILS
 
@@ -69,8 +70,8 @@ type alias Model =
   }
 
 
-init : (Model, Cmd Msg)
-init =
+init : () -> (Model, Cmd Msg)
+init _ =
   let
     initModel = 
       { nbTicks = 0,
@@ -91,7 +92,7 @@ shiftWordPos { word, pos } = { word = word, pos = pos + 1 }
 displayWordPos : PositionedWord -> Html msg
 displayWordPos {word, pos} =
   let
-    pixelPadding = toString(pos * nbPixelsPerStep) ++ "px"
+    pixelPadding = String.fromInt(pos * nbPixelsPerStep) ++ "px"
     color =
       if pos < nbStepsBeforeGameOver // 2
         then "green"
@@ -101,7 +102,12 @@ displayWordPos {word, pos} =
         else
           "red"
   in
-    span [ style [ ("padding", pixelPadding), ("color", color) ] ] [ text word ]
+    span
+      [ style "padding" pixelPadding
+      , style "color" color
+      ]
+      [ text word
+      ]
 
 addWord : List PositionedWord -> Word -> List PositionedWord
 addWord list w = list ++ [{ word = w, pos = 0 }]
@@ -135,10 +141,6 @@ type Msg
   | ChangeEntry String
   | KeyDown Int
   | AddWord (Maybe Word)
-  -- those two actions are for keeping the focus on the input
-  -- see https://stackoverflow.com/questions/31901397/how-to-set-focus-on-an-element-in-elm
-  | FocusOnInput
-  | FocusResult (Result Dom.Error ())
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -161,7 +163,7 @@ update msg model =
               then 2
             else
               1
-        cmd = if (model.nbTicks % rythm) == 0 then Random.generate AddWord (getRandomValueFromList allWords) else Cmd.none
+        cmd = if (modBy rythm model.nbTicks) == 0 then Random.generate AddWord (getRandomValueFromList allWords) else Cmd.none
       in
         (newModel, cmd)
     AddWord maybeWord ->
@@ -182,17 +184,6 @@ update msg model =
           ({ model | wordPosList = newWordPosList, currentEntry = "", score = newScore, nbMisses = newNbMisses }, Cmd.none)
       else
         (model, Cmd.none)
-    FocusOnInput ->
-      ( model, Dom.focus "input" |> Task.attempt FocusResult )
-    FocusResult result ->
-        -- handle success or failure here
-        case result of
-            Err (Dom.NotFound id) ->
-              -- unable to find dom 'id'
-              (model, Cmd.none)
-            Ok () ->
-              -- successfully focus the dom
-              (model, Cmd.none)
 
 
 -- SUBSCRIPTIONS
@@ -200,7 +191,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Time.every second (\_ -> Tick)
+  every 1000.0 (\_ -> Tick)
 
 
 -- VIEW
@@ -212,17 +203,21 @@ view model =
     div [] [
       span [] [ text "You lose!" ]
       , br [] []
-      , span [] [ text (" Score = " ++ toString model.score) ]
+      , span [] [ text (" Score = " ++ String.fromInt model.score) ]
       , br [] []
-      , span [] [ text (" Misses = " ++ toString model.nbMisses) ]
+      , span [] [ text (" Misses = " ++ String.fromInt model.nbMisses) ]
     ]
   else
     let
       wordDisplayList = List.map displayWordPos model.wordPosList
-      areaWidth = toString (nbStepsBeforeGameOver * nbPixelsPerStep) ++ "px"
+      areaWidth = String.fromInt (nbStepsBeforeGameOver * nbPixelsPerStep) ++ "px"
     in
       div [] [
-        div [ style [ ("height" , "400px"), ("width" , areaWidth), ("background-color", "black") ]]
+        div
+          [ style "height" "400px"
+          , style "width" areaWidth
+          , style "background-color" "black"
+          ]
           ((List.intersperse (br [] []) wordDisplayList) ++
           [ br [] []
           ])
@@ -232,9 +227,8 @@ view model =
             value model.currentEntry,
             onInput ChangeEntry,
             onKeyDown KeyDown,
-            autofocus True,
-            onBlur FocusOnInput
+            autofocus True
           ] []
-        , span [] [ text (" Score = " ++ toString model.score) ]
-        , span [] [ text (" Misses = " ++ toString model.nbMisses) ]
+        , span [] [ text (" Score = " ++ String.fromInt model.score) ]
+        , span [] [ text (" Misses = " ++ String.fromInt model.nbMisses) ]
       ]
