@@ -96,13 +96,15 @@ checkWord lpw w =
   in
     (newLpw, hasChanged)
 
-getRandomValueFromList : List a -> Random.Generator (Maybe a)
-getRandomValueFromList l =
+getValueAtIndex : Int -> List a -> Maybe a
+getValueAtIndex ind = List.head << List.drop ind
+
+getRandomWordFromList : List Word -> Random.Generator Word
+getRandomWordFromList l =
   let
-    index = Random.int 0 (List.length l - 1)
-    maybeVal = Random.map (\ind -> List.head (List.drop ind l)) index
+    randomIndex = Random.int 0 (List.length l - 1)
   in
-    maybeVal
+    Random.map (\ind -> getValueAtIndex ind l |> Maybe.withDefault "Nothing") randomIndex
 
 
 isGameOver : List PositionedWord -> Bool
@@ -114,7 +116,7 @@ isGameOver = List.any (\{word, pos} -> pos >= nbStepsBeforeGameOver)
 type Msg
   = Tick
   | ChangeEntry String
-  | AddWord (Maybe Word)
+  | AddWord Word
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -137,15 +139,11 @@ update msg model =
               then 2
             else
               1
-        cmd = if (modBy rythm model.nbTicks) == 0 then Random.generate AddWord (getRandomValueFromList allWords) else Cmd.none
+        cmd = if (modBy rythm model.nbTicks) == 0 then Random.generate AddWord (getRandomWordFromList allWords) else Cmd.none
       in
         (newModel, cmd)
-    AddWord maybeWord ->
-      case maybeWord of
-        Just w ->
-          ({ model | wordPosList = addWord model.wordPosList w }, Cmd.none)
-        Nothing ->
-          ({ model | wordPosList = addWord model.wordPosList "Nothing" }, Cmd.none)
+    AddWord word ->
+        ({ model | wordPosList = addWord model.wordPosList word }, Cmd.none)
     ChangeEntry word ->
         let
           (newWordPosList, found) = checkWord model.wordPosList word
