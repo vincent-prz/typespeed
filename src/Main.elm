@@ -42,8 +42,7 @@ type alias Model =
   { nbTicks : Int,
     wordPosList : List PositionedWord,
     currentEntry : String,
-    score: Int,
-    nbMisses: Int
+    score: Int
   }
 
 
@@ -54,8 +53,7 @@ init _ =
       { nbTicks = 0,
         wordPosList = [ { word = "go", pos = 0 } ],
         currentEntry = "",
-        score = 0,
-        nbMisses = 0
+        score = 0
       }
   in
     (initModel, Cmd.none)
@@ -116,7 +114,6 @@ isGameOver = List.any (\{word, pos} -> pos >= nbStepsBeforeGameOver)
 type Msg
   = Tick
   | ChangeEntry String
-  | KeyDown Int
   | AddWord (Maybe Word)
 
 
@@ -150,18 +147,12 @@ update msg model =
         Nothing ->
           ({ model | wordPosList = addWord model.wordPosList "Nothing" }, Cmd.none)
     ChangeEntry word ->
-      ({ model | currentEntry = word }, Cmd.none)
-    KeyDown key ->
-      if key == 13 then
         let
-          (newWordPosList, found) = checkWord model.wordPosList model.currentEntry
+          (newWordPosList, found) = checkWord model.wordPosList word
           newScore = if found then model.score + (String.length model.currentEntry) else model.score
-          newNbMisses = if found then model.nbMisses else model.nbMisses + 1
+          newCurrentEntry = if found then "" else word
         in
-          ({ model | wordPosList = newWordPosList, currentEntry = "", score = newScore, nbMisses = newNbMisses }, Cmd.none)
-      else
-        (model, Cmd.none)
-
+        ({ model | wordPosList = newWordPosList, currentEntry = newCurrentEntry, score = newScore }, Cmd.none)
 
 -- SUBSCRIPTIONS
 
@@ -182,7 +173,6 @@ view model =
       , br [] []
       , span [] [ text (" Score = " ++ String.fromInt model.score) ]
       , br [] []
-      , span [] [ text (" Misses = " ++ String.fromInt model.nbMisses) ]
     ]
   else
     let
@@ -203,9 +193,7 @@ view model =
             type_ "text",
             value model.currentEntry,
             onInput ChangeEntry,
-            onKeyDown KeyDown,
             autofocus True
           ] []
         , span [] [ text (" Score = " ++ String.fromInt model.score) ]
-        , span [] [ text (" Misses = " ++ String.fromInt model.nbMisses) ]
       ]
