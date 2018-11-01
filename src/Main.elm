@@ -29,6 +29,7 @@ type alias PositionedWord = {
     word: Word,
     pos: Position
   }
+type alias Score = Int
 
 -- UTILS
 
@@ -42,7 +43,7 @@ type alias Model =
   { nbTicks : Int,
     wordPosList : List PositionedWord,
     currentEntry : String,
-    score: Int
+    score: Score
   }
 
 
@@ -84,8 +85,8 @@ displayWordPos {word, pos} =
       [ text word
       ]
 
-addWord : List PositionedWord -> Word -> List PositionedWord
-addWord list w = list ++ [{ word = w, pos = 0 }]
+addWords : List PositionedWord -> List Word -> List PositionedWord
+addWords list words = list ++ List.map (\w -> { word = w, pos = 0 }) words
 
 checkWord : List PositionedWord -> Word -> (List PositionedWord, Bool)
 checkWord lpw w =
@@ -99,16 +100,35 @@ checkWord lpw w =
 getValueAtIndex : Int -> List a -> Maybe a
 getValueAtIndex ind = List.head << List.drop ind
 
-getRandomWordFromList : List Word -> Random.Generator Word
-getRandomWordFromList l =
+getRandomWordsFromList : Int -> List Word -> Random.Generator (List Word)
+getRandomWordsFromList n l =
   let
-    randomIndex = Random.int 0 (List.length l - 1)
+    randomIndexes = Random.list n (Random.int 0 (List.length l - 1))
   in
-    Random.map (\ind -> getValueAtIndex ind l |> Maybe.withDefault "Nothing") randomIndex
+    Random.map (
+            \indexes -> List.map (
+                    \ind -> getValueAtIndex ind l |> Maybe.withDefault "Nothing"
+                    ) indexes
+            ) randomIndexes
 
 
 isGameOver : List PositionedWord -> Bool
 isGameOver = List.any (\{word, pos} -> pos >= nbStepsBeforeGameOver)
+
+getLatencyAndBandwidth : Score -> (Int, Int)
+getLatencyAndBandwidth s =
+        if s < 25 then
+                (2, 1)
+        else if s < 50 then
+                (1, 1)
+        else if s < 75 then
+                (2, 3)
+        else if s < 100 then
+                (1, 2)
+        else if s < 125 then
+                (2, 5)
+        else
+                (1, 3)
 
 -- UPDATE
 
@@ -116,7 +136,7 @@ isGameOver = List.any (\{word, pos} -> pos >= nbStepsBeforeGameOver)
 type Msg
   = Tick
   | ChangeEntry String
-  | AddWord Word
+  | AddWords (List Word)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -131,19 +151,15 @@ update msg model =
             nbTicks = model.nbTicks + 1,
             wordPosList = newWordPosList
           }
-        rythm =
-          if model.score < 25
-            then 3
-          else
-            if model.score < 50
-              then 2
-            else
-              1
-        cmd = if (modBy rythm model.nbTicks) == 0 then Random.generate AddWord (getRandomWordFromList allWords) else Cmd.none
+        (lcy, bwidth) = getLatencyAndBandwidth model.score
+        cmd = if (modBy lcy model.nbTicks) == 0 then
+                      Random.generate AddWords (getRandomWordsFromList bwidth allWords)
+              else
+                      Cmd.none
       in
         (newModel, cmd)
-    AddWord word ->
-        ({ model | wordPosList = addWord model.wordPosList word }, Cmd.none)
+    AddWords words ->
+        ({ model | wordPosList = addWords model.wordPosList words }, Cmd.none)
     ChangeEntry word ->
         let
           (newWordPosList, found) = checkWord model.wordPosList word
