@@ -8,32 +8,10 @@ import String
 import Task
 import Time exposing (every)
 
+import Words exposing (Word, allWords)
+
 nbStepsBeforeGameOver = 12
 nbPixelsPerStep = 40
-
-allWords = [
-  "apple",
-  "animal",
-  "banana",
-  "bear",
-  "beard",
-  "cake",
-  "clone",
-  "direction",
-  "enable",
-  "fuck",
-  "go",
-  "hello",
-  "hell",
-  "king",
-  "language",
-  "maybe",
-  "nothing",
-  "queen",
-  "silence",
-  "understand",
-  "zigzag"
-  ]
 
 main =
   Browser.element
@@ -46,7 +24,6 @@ main =
 
 -- TYPES
 
-type alias Word = String
 type alias Position = Int
 type alias PositionedWord = {
     word: Word,
