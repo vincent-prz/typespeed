@@ -1,11 +1,11 @@
 import Browser
-import Html exposing (Html, br, button, div, input, span, text)
-import Html.Attributes exposing (autofocus, id, style, type_, value)
-import Html.Events exposing (keyCode, on, onBlur, onClick, onInput)
-import Json.Decode as Json
+import Browser.Events
+import Html exposing (Html, br, div, span, text)
+import Html.Attributes exposing (style)
+import Html.Events exposing (keyCode)
+import Json.Decode as Decode
 import Random
 import String
-import Task
 import Time exposing (every)
 
 import Words exposing (Word, allWords)
@@ -31,12 +31,33 @@ type alias PositionedWord = {
   }
 type alias Score = Int
 
+type Key
+  = Character Char
+  | Control String
+
 -- UTILS
 
-onKeyDown : (Int -> msg) -> Html.Attribute msg
-onKeyDown tagger =
-  on "keydown" (Json.map tagger keyCode)
+keyDecoder : Decode.Decoder String
+keyDecoder =
+  Decode.field "key" Decode.string
 
+toKey : String -> Key
+toKey string =
+  case String.uncons string of
+    Just (char, "") ->
+      Character char
+
+    _ ->
+      Control string
+
+removeLastChar : String -> String
+removeLastChar string =
+  case String.uncons (String.reverse string) of
+    Just (_, t) ->
+      String.reverse t
+
+    Nothing ->
+      ""
 -- MODEL
 
 type alias Model =
@@ -135,8 +156,8 @@ getLatencyAndBandwidth s =
 
 type Msg
   = Tick
-  | ChangeEntry String
   | AddWords (List Word)
+  | KeyBoardEvent Key
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -160,20 +181,34 @@ update msg model =
         (newModel, cmd)
     AddWords words ->
         ({ model | wordPosList = addWords model.wordPosList words }, Cmd.none)
-    ChangeEntry word ->
+    KeyBoardEvent key ->
         let
-          (newWordPosList, found) = checkWord model.wordPosList word
-          newScore = if found then model.score + (String.length model.currentEntry) else model.score
-          newCurrentEntry = if found then "" else word
+            newCurrentEntry =
+              case key of
+                Character c ->
+                  model.currentEntry ++ String.fromChar c
+
+                Control "Backspace" ->
+                  removeLastChar model.currentEntry
+
+                _ ->
+                  model.currentEntry
+
+            (newWordPosList, found) = checkWord model.wordPosList newCurrentEntry
+            newScore = if found then model.score + (String.length newCurrentEntry) else model.score
+            cleanedNewCurrentEntry = if found then "" else newCurrentEntry
         in
-        ({ model | wordPosList = newWordPosList, currentEntry = newCurrentEntry, score = newScore }, Cmd.none)
+        ({ model | wordPosList = newWordPosList, currentEntry = cleanedNewCurrentEntry, score = newScore }, Cmd.none)
 
 -- SUBSCRIPTIONS
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  every 1000.0 (\_ -> Tick)
+  Sub.batch [
+          every 1000.0 (\_ -> Tick)
+          , Browser.Events.onKeyDown (Decode.map (toKey >> KeyBoardEvent) keyDecoder)
+          ]
 
 
 -- VIEW
@@ -202,12 +237,7 @@ view model =
           ((List.intersperse (br [] []) wordDisplayList) ++
           [ br [] []
           ])
-        , input [
-            id "input",
-            type_ "text",
-            value model.currentEntry,
-            onInput ChangeEntry,
-            autofocus True
-          ] []
+          , span [] [ text model.currentEntry ]
+          , br [] []
         , span [] [ text (" Score = " ++ String.fromInt model.score) ]
       ]
