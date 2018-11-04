@@ -1,79 +1,82 @@
 module Words exposing (Word, allWords)
 
-type alias Word = String
 
-allWords = [
-  "animal",
-  "ant",
-  "apple",
-  "art",
-  "assassin",
-  "average",
-  "banana",
-  "bear",
-  "beard",
-  "board",
-  "cake",
-  "carrot",
-  "cell",
-  "clone",
-  "dark",
-  "darkness",
-  "direction",
-  "dwarf",
-  "egg",
-  "eggplant",
-  "elbow",
-  "elm",
-  "enable",
-  "eye",
-  "fire",
-  "friend",
-  "frost",
-  "fuck",
-  "ginger",
-  "go",
-  "granted",
-  "grow",
-  "hell",
-  "hello",
-  "hint",
-  "hired",
-  "ice",
-  "intention",
-  "island",
-  "jeopardize",
-  "jungle",
-  "killer",
-  "king",
-  "knight",
-  "language",
-  "lord",
-  "massage",
-  "maybe",
-  "mirror",
-  "nilpotent",
-  "nothing",
-  "oracle",
-  "parking",
-  "peculiarity",
-  "precision",
-  "python",
-  "queen",
-  "quirk",
-  "rat",
-  "riddle",
-  "sailor",
-  "silence",
-  "tower",
-  "twist",
-  "understand",
-  "vision",
-  "void",
-  "whale",
-  "word",
-  "yell",
-  "youngster",
-  "zigzag",
-  "zombie"
-  ]
+type alias Word =
+    String
+
+
+allWords =
+    [ "animal"
+    , "ant"
+    , "apple"
+    , "art"
+    , "assassin"
+    , "average"
+    , "banana"
+    , "bear"
+    , "beard"
+    , "board"
+    , "cake"
+    , "carrot"
+    , "cell"
+    , "clone"
+    , "dark"
+    , "darkness"
+    , "direction"
+    , "dwarf"
+    , "egg"
+    , "eggplant"
+    , "elbow"
+    , "elm"
+    , "enable"
+    , "eye"
+    , "fire"
+    , "friend"
+    , "frost"
+    , "fuck"
+    , "ginger"
+    , "go"
+    , "granted"
+    , "grow"
+    , "hell"
+    , "hello"
+    , "hint"
+    , "hired"
+    , "ice"
+    , "intention"
+    , "island"
+    , "jeopardize"
+    , "jungle"
+    , "killer"
+    , "king"
+    , "knight"
+    , "language"
+    , "lord"
+    , "massage"
+    , "maybe"
+    , "mirror"
+    , "nilpotent"
+    , "nothing"
+    , "oracle"
+    , "parking"
+    , "peculiarity"
+    , "precision"
+    , "python"
+    , "queen"
+    , "quirk"
+    , "rat"
+    , "riddle"
+    , "sailor"
+    , "silence"
+    , "tower"
+    , "twist"
+    , "understand"
+    , "vision"
+    , "void"
+    , "whale"
+    , "word"
+    , "yell"
+    , "youngster"
+    , "zigzag"
+    , "zombie"
+    ]
