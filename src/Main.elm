@@ -21,7 +21,7 @@ nbPixelsPerStep =
 
 
 main =
-    Browser.element
+    Browser.document
         { init = init
         , view = view
         , update = update
@@ -298,15 +298,19 @@ subscriptions model =
 -- VIEW
 
 
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
     if isGameOver model.wordPosList then
-        div []
-            [ span [] [ text "You lose!" ]
-            , br [] []
-            , span [] [ text (" Score = " ++ String.fromInt model.score) ]
-            , br [] []
+        { title = "typespeed"
+        , body =
+            [ div []
+                [ span [] [ text "You lose!" ]
+                , br [] []
+                , span [] [ text (" Score = " ++ String.fromInt model.score) ]
+                , br [] []
+                ]
             ]
+        }
 
     else
         let
@@ -316,17 +320,21 @@ view model =
             areaWidth =
                 String.fromInt (nbStepsBeforeGameOver * nbPixelsPerStep) ++ "px"
         in
-        div []
-            [ div
-                [ style "height" "400px"
-                , style "width" areaWidth
-                , style "background-color" "black"
+        { title = "typespeed"
+        , body =
+            [ div []
+                [ div
+                    [ style "height" "400px"
+                    , style "width" areaWidth
+                    , style "background-color" "black"
+                    ]
+                    (List.intersperse (br [] []) wordDisplayList
+                        ++ [ br [] []
+                           ]
+                    )
+                , span [] [ text model.currentEntry ]
+                , br [] []
+                , span [] [ text (" Score = " ++ String.fromInt model.score) ]
                 ]
-                (List.intersperse (br [] []) wordDisplayList
-                    ++ [ br [] []
-                       ]
-                )
-            , span [] [ text model.currentEntry ]
-            , br [] []
-            , span [] [ text (" Score = " ++ String.fromInt model.score) ]
             ]
+        }
