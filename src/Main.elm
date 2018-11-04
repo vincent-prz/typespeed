@@ -2,9 +2,9 @@ module Main exposing (..)
 
 import Browser
 import Browser.Events
-import Html exposing (Html, br, div, span, text)
+import Html exposing (Html, br, button, div, span, text)
 import Html.Attributes exposing (style)
-import Html.Events exposing (keyCode)
+import Html.Events exposing (keyCode, onClick)
 import Json.Decode as Decode
 import Random
 import String
@@ -218,6 +218,7 @@ type Msg
     = Tick
     | AddWords (List Word)
     | KeyBoardEvent Key
+    | Restart
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -281,6 +282,9 @@ update msg model =
             in
             ( { model | wordPosList = newWordPosList, currentEntry = cleanedNewCurrentEntry, score = newScore }, Cmd.none )
 
+        Restart ->
+            init ()
+
 
 
 -- SUBSCRIPTIONS
@@ -308,6 +312,7 @@ view model =
                 , br [] []
                 , span [] [ text (" Score = " ++ String.fromInt model.score) ]
                 , br [] []
+                , button [ onClick Restart ] [ text "Restart" ]
                 ]
             ]
         }
